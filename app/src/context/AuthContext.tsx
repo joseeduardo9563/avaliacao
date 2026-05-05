@@ -7,6 +7,8 @@ type AuthContextData = {
   token: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
+
   signOut: () => void;
 };
 
@@ -50,6 +52,26 @@ export function AuthProvider({ children }: any) {
     setToken(token);
   }
 
+  async function signUp(name: string, email: string, password: string) {
+    const response = await api.post('/register', {
+      name,
+      email,
+      password,
+      password_confirmation: password,
+    });
+
+    const token = response.data.token;
+
+    await AsyncStorage.setItem('@token', token);
+
+    api.defaults.headers.Authorization = `Bearer ${token}`;
+
+    const me = await api.get('/me');
+
+    setUser(me.data);
+    setToken(token);
+  }
+
   function signOut() {
     AsyncStorage.removeItem('@token');
     setUser(null);
@@ -57,7 +79,7 @@ export function AuthProvider({ children }: any) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, token, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
